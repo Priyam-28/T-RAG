@@ -1,0 +1,12 @@
+services:
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    # environment:
+    #   - VALKEY_CONFIG=/etc/valkey/valkey.conf
+    # volumes:
+    #   - ./valkey.conf:/etc/valkey/valkey.conf
+    # networks:
+    #   - valkey_network
