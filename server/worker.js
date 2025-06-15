@@ -4,6 +4,7 @@ import { MistralAIEmbeddings } from "@langchain/mistralai";
 import { Document } from "@langchain/core/documents";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { CharacterTextSplitter } from "@langchain/textsplitters";
+import 'dotenv/config';
 
 const worker = new Worker('file-queue', async (job) => {
     console.log("Job:", job.data);
@@ -14,18 +15,21 @@ const worker = new Worker('file-queue', async (job) => {
     const docs = await loader.load();
     console.log("Docs loaded:", docs);
 
-    // Extract text content from all documents
-    const combinedText = docs.map(doc => doc.pageContent).join('\n');
     
-    // Split the combined text into chunks
-    const textSplitter = new CharacterTextSplitter({
-      chunkSize: 300,
-      chunkOverlap: 0,
+    const embeddings = new MistralAIEmbeddings({
+      model: "mistral-embed",
+      apiKey: process.env.MISTRAL_API_KEY, // Default value
+    });
+
+    const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
+      url: `http://localhost:6333`,
+      collectionName: "rag-t",
     });
     
-    const chunks = await textSplitter.splitText(combinedText);
-    console.log("Text chunks:", chunks.length);
-    console.log(chunks[0]); // Log first chunk for verification
+    await vectorStore.addDocuments(docs);
+    console.log(`All docs are added to vector store`);
+  
+
 
 }, {
   concurrency: 100,
