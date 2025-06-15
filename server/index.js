@@ -35,7 +35,7 @@ app.post('/upload/pdf', upload.single('pdf'), async (req, res) => {
         destination: req.file.destination,
         path: req.file.path
     }))
-    return res.json({ message: 'uploaded' });
+    return res.json({message: 'uploaded'});
 });
 
 
