@@ -1,0 +1,44 @@
+{
+    "message": "The document outlines a process for finding, validating, and launching winning startup ideas. It emphasizes the importance of moving quickly from idea to implementation, creating a wireframe of e product or website, using tools to build a prototype landing page, and gathering feedback through social media and online communities. The goal is to validate interest and iterate based on user feedback. The document also mentions a bonus video tutorial and encourages sharing the playbook with others.",
+    "query": "what is the idea of the document?",
+    "docs": [
+        {
+            "content": "HOW TO FIND & VALIDATE WINNING STARTUP IDEAS\n5\nSTEP 4\nWIREFRAME & LAUNCH\nNow that you have a validated idea, it's time to bring it to life9\n4ECreate a wireframe of your product or website. This doesn...",
+            "metadata": {
+                "source": "uploads\\1750016297802-401522759-Find profitable startup ideas using reddit.pdf",
+                "pdf": {
+                    "version": "1.10.100",
+                    "info": {
+                        "PDFFormatVersion": "1.7",
+                        "IsAcroFormPresent": false,
+                        "IsXFAPresent": false
+                    },
+                    "metadata": null,
+                    "totalPages": 8
+                },
+                "loc": {
+                    "pageNumber": 6
+                }
+            }
+        },
+        {
+            "content": "HOW TO FIND & VALIDATE WINNING STARTUP IDEAS\n7\nBONUS\nVIDEO TUTORIAL\nIf you start building an idea you find, DM me on X \nI would love to hear from you.\n@gregisenberg \nIf you loved this, share it wit...",
+            "metadata": {
+                "source": "uploads\\1750016297802-401522759-Find profitable startup ideas using reddit.pdf",
+                "pdf": {
+                    "version": "1.10.100",
+                    "info": {
+                        "PDFFormatVersion": "1.7",
+                        "IsAcroFormPresent": false,
+                        "IsXFAPresent": false
+                    },
+                    "metadata": null,
+                    "totalPages": 8
+                },
+                "loc": {
+                    "pageNumber": 8
+                }
+            }
+        }
+    ]
+}

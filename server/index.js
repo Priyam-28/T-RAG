@@ -198,14 +198,12 @@ Instructions:
         const answer = response.content || "Sorry, I couldn't generate a response.";
 
         return res.json({
-            message: answer,
-            query: userQuery,
+            message: answer.choices[0].message.content,
             docs: relevantDocs.map(doc => ({
                 content: doc.pageContent.substring(0, 200) + '...',
                 metadata: doc.metadata
             }))
         });
-
     } catch (error) {
         console.error("Error in /chat:", error);
         return res.status(500).json({ 
@@ -214,8 +212,6 @@ Instructions:
         });
     }
 });
-
-
 
 app.listen(8000, () => {
     console.log('Server is running on port 8000');
