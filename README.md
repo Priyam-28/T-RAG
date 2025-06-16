@@ -2,7 +2,7 @@
 
 A modern, AI-powered PDF chat application that allows users to upload PDF documents and have intelligent conversations about their content. Built with Next.js, TypeScript, and shadcn/ui components.
 
-![PDF Chat Assistant](./public/hero-screenshot.png)
+![PDF Chat Assistant](./images/hero-screenshot.png)
 
 ---
 
