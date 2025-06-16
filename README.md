@@ -56,7 +56,6 @@ A modern, AI-powered PDF chat application that allows users to upload PDF docume
    ```bash
    npm install
    ```
-
 3. **Set up environment variables**
    ```bash
    cp .env.example .env.local
