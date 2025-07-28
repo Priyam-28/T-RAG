@@ -1,0 +1,56 @@
+services:
+  # Redis service (using Valkey)
+  - type: redis
+    name: rag-redis
+    plan: starter # Free tier
+    maxmemoryPolicy: allkeys-lru
+
+  # Main web service
+  - type: web
+    name: rag-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8000
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rag-redis
+          property: connectionString
+      - key: MISTRAL_API_KEY
+        sync: false # Will be set manually in dashboard
+      - key: QDRANT_URL
+        value: http://rag-qdrant:6333
+
+  # Worker service
+  - type: worker
+    name: rag-worker
+    env: node
+    buildCommand: npm install
+    startCommand: npm run start:worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rag-redis
+          property: connectionString
+      - key: MISTRAL_API_KEY
+        sync: false # Will be set manually in dashboard
+      - key: QDRANT_URL
+        value: http://rag-qdrant:6333
+
+  # Qdrant vector database (using Docker)
+  - type: private
+    name: rag-qdrant
+    env: docker
+    dockerfilePath: ./Dockerfile.qdrant
+    disk:
+      name: qdrant-data
+      mountPath: /qdrant/storage
+      sizeGB: 1

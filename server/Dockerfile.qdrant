@@ -1,0 +1,10 @@
+FROM qdrant/qdrant:latest
+
+EXPOSE 6333
+
+# Create storage directory
+RUN mkdir -p /qdrant/storage
+
+VOLUME /qdrant/storage
+
+CMD ["./qdrant"]
