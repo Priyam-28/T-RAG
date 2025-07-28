@@ -5,18 +5,37 @@ import { Queue } from "bullmq";
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { MistralAIEmbeddings } from "@langchain/mistralai";
 import { MistralAI } from "@langchain/mistralai";
-import { ChatMistralAI } from "@langchain/mistralai"; // Change this import
+import { ChatMistralAI } from "@langchain/mistralai";
 import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
+
+// Environment variables for production
+const REDIS_URL = process.env.REDIS_URL;
+const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379');
+const QDRANT_URL = process.env.QDRANT_URL || 'http://localhost:6333';
+const PORT = process.env.PORT || 8000;
+
+// Create uploads directory
+const uploadsDir = './uploads';
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const app = express();
+
+// Redis connection - handle both Redis URL and host/port for Render compatibility
+const redisConfig = REDIS_URL ? REDIS_URL : {
+    host: REDIS_HOST,
+    port: REDIS_PORT
+};
+
 const queue = new Queue("file-queue", {
-    connection: {
-        host: 'localhost',
-        port: 6379
-    }
+    connection: redisConfig
 });
 
-// Initialize ChatMistralAI (LangChain wrapper)
+// Initialize ChatMistralAI
 const llm = new ChatMistralAI({
     model: "mistral-small-latest",
     temperature: 0.1,
@@ -24,7 +43,7 @@ const llm = new ChatMistralAI({
 });
 
 app.use(cors());
-app.use(express.json()); // Add this to parse JSON bodies
+app.use(express.json());
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -39,12 +58,26 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.get('/', (req, res) => {
-    res.send('Sab changa si');
+    res.json({ 
+        message: 'RAG Backend is running!',
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        endpoints: [
+            'GET /',
+            'POST /upload/pdf',
+            'GET /chat?message=your_question',
+            'POST /chat'
+        ]
+    });
 });
 
 app.post('/upload/pdf', upload.single('pdf'), async (req, res) => {
     try {
+        console.log('Upload request received');
+        console.log('File:', req.file);
+        
         if (!req.file) {
+            console.log('No file in request');
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
@@ -58,11 +91,16 @@ app.post('/upload/pdf', upload.single('pdf'), async (req, res) => {
         console.log(`Job ${job.id} added to queue`);
         return res.json({ 
             message: 'uploaded',
-            jobId: job.id 
+            jobId: job.id,
+            filename: req.file.originalname,
+            status: 'processing'
         });
     } catch (error) {
         console.error('Upload error:', error);
-        return res.status(500).json({ error: 'Upload failed' });
+        return res.status(500).json({ 
+            error: 'Upload failed',
+            details: error.message 
+        });
     }
 });
 
@@ -82,9 +120,9 @@ app.get('/chat', async (req, res) => {
             apiKey: process.env.MISTRAL_API_KEY,
         });
 
-        // Connect to vector store
+        // Connect to vector store using environment variable
         const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
-            url: `http://localhost:6333`,
+            url: QDRANT_URL,
             collectionName: "rag-t",
         });
 
@@ -140,7 +178,7 @@ Instructions:
     }
 });
 
-// POST endpoint for chat (alternative)
+// POST endpoint for chat
 app.post('/chat', async (req, res) => {
     const { message: userQuery } = req.body;
 
@@ -157,9 +195,9 @@ app.post('/chat', async (req, res) => {
             apiKey: process.env.MISTRAL_API_KEY,
         });
 
-        // Connect to vector store
+        // Connect to vector store using environment variable
         const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
-            url: `http://localhost:6333`,
+            url: QDRANT_URL,
             collectionName: "rag-t",
         });
 
@@ -198,7 +236,7 @@ Instructions:
         const answer = response.content || "Sorry, I couldn't generate a response.";
 
         return res.json({
-            message: answer.choices[0].message.content,
+            message: answer, // Fixed: removed .choices[0].message.content
             docs: relevantDocs.map(doc => ({
                 content: doc.pageContent.substring(0, 200) + '...',
                 metadata: doc.metadata
@@ -213,11 +251,23 @@ Instructions:
     }
 });
 
-app.listen(8000, () => {
-    console.log('Server is running on port 8000');
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
+// Start server with production-ready configuration
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log('Environment:', process.env.NODE_ENV || 'development');
     console.log('Available endpoints:');
-    console.log('  GET  /');
-    console.log('  POST /upload/pdf');
-    console.log('  GET  /chat?message=your_question');
-    console.log('  POST /chat (with JSON body: {"message": "your_question"})');
+    console.log(`  GET  http://localhost:${PORT}/`);
+    console.log(`  POST http://localhost:${PORT}/upload/pdf`);
+    console.log(`  GET  http://localhost:${PORT}/chat?message=your_question`);
+    console.log(`  POST http://localhost:${PORT}/chat`);
+    console.log(`  GET  http://localhost:${PORT}/health`);
 });

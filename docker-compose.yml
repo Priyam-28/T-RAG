@@ -1,23 +1,77 @@
+# services:
+#   valkey:
+#     image: valkey/valkey:latest
+#     container_name: valkey
+#     ports:
+#       - 6379:6379
+#     # environment:
+#     #   - VALKEY_CONFIG=/etc/valkey/valkey.conf
+#     # volumes:
+#     #   - ./valkey.conf:/etc/valkey/valkey.conf
+#     # networks:
+#     #   - valkey_network
+#   qdrant:
+#     image: qdrant/qdrant
+    
+#     ports:
+#       - 6333:6333
+#     # environment:
+#     #   - QDRANT_CONFIG=/etc/qdrant/qdrant.conf
+#     # volumes:
+#     #   - ./qdrant.conf:/etc/qdrant/qdrant.conf
+#     # networks:
+#     #   - qdrant_network
+
 services:
   valkey:
     image: valkey/valkey:latest
     container_name: valkey
     ports:
-      - 6379:6379
-    # environment:
-    #   - VALKEY_CONFIG=/etc/valkey/valkey.conf
-    # volumes:
-    #   - ./valkey.conf:/etc/valkey/valkey.conf
-    # networks:
-    #   - valkey_network
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    restart: unless-stopped
+
   qdrant:
     image: qdrant/qdrant
-    
+    container_name: qdrant
     ports:
-      - 6333:6333
-    # environment:
-    #   - QDRANT_CONFIG=/etc/qdrant/qdrant.conf
-    # volumes:
-    #   - ./qdrant.conf:/etc/qdrant/qdrant.conf
-    # networks:
-    #   - qdrant_network
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: rag-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=valkey
+      - QDRANT_URL=http://qdrant:6333
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - valkey
+      - qdrant
+    restart: unless-stopped
+
+  worker:
+    build: .
+    container_name: rag-worker
+    command: node worker.js
+    environment:
+      - REDIS_HOST=valkey
+      - QDRANT_URL=http://qdrant:6333
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - valkey
+      - qdrant
+    restart: unless-stopped
+
+volumes:
+  valkey_data:
+  qdrant_data:
